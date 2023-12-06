@@ -40,74 +40,41 @@ test = [
 ]
 
 
-def parse_data_one(data):
-    seeds = re.sub(r"^\D+", "", data[0]).split()
-    for i in range(len(seeds)):
-        seeds[i] = int(seeds[i])
-    i = 0
-    maps = defaultdict(list)
-    for line in data[3:]:
-        if line == "":
-            continue
-        if line[0].isalpha():
-            i += 1
-        else:
-            nums = line.split(" ")
-            for j in range(len(nums)):
-                nums[j] = int(nums[j])
-            maps[i].append(nums)
-    return (seeds, maps)
+def locations(intervals):
+    for maps_block in input_maps.split("\n\n"):
+        mappings = maps_block.split("\n")[1:]
+        images = list()
+        while intervals:
+            x, y = intervals.pop()
+            for mapping in mappings:
+                a, b, delta = map(int, mapping.split())
+                r_endpoint = b + delta - 1
+                if b <= x <= y <= r_endpoint:
+                    images.append((x - b + a, y - b + a))
+                    break
+                if b <= x <= r_endpoint < y:
+                    intervals.extend([(x, r_endpoint), (r_endpoint + 1, y)])
+                    break
+            else:
+                images.append((x, y))
+        intervals = images
+    return intervals
 
 
 with open("05.txt") as f:
-    data = [line.rstrip("\n") for line in f.readlines()]
+    input_seeds, input_maps = f.read().split("\n\n", 1)
+    seed_data = [int(x) for x in re.findall(r"\d+", input_seeds)]
 
 
-def traverse_maps(seeds, maps):
-    for i in range(len(maps.items())):
-        for j in range(len(seeds)):
-            for row in maps[i]:
-                if seeds[j] >= row[1] and seeds[j] < row[1] + row[2]:
-                    diff = row[0] - row[1]
-                    seeds[j] += diff
-                    break
-    return f"total: {min(seeds)}"
+def one():
+    return min(min(locations([(x, x) for x in seed_data])))
 
 
-def one(input=data):
-    seeds, maps = parse_data_one(input)
-    return traverse_maps(seeds, maps)
+def two():
+    seed_intervals = [(x, x + d - 1) for x, d in zip(seed_data[::2], seed_data[1::2])]
 
-
-def parse_data_two(data):
-    seed_ranges = re.sub(r"^\D+", "", data[0]).split()
-    seeds = []
-    for i in range(0, len(seed_ranges), 2):
-        seed = int(seed_ranges[i])
-        k = int(seed_ranges[i + 1])
-        for j in range(k):
-            seeds.append(seed + j)
-    i = 0
-    maps = defaultdict(list)
-    for line in data[3:]:
-        if line == "":
-            continue
-        if line[0].isalpha():
-            i += 1
-        else:
-            nums = line.split(" ")
-            for j in range(len(nums)):
-                nums[j] = int(nums[j])
-            maps[i].append(nums)
-    return (seeds, maps)
-
-
-def two(input=data):
-    seeds, maps = parse_data_two(input)
-    return traverse_maps(seeds, maps)
+    return min(min(locations(seed_intervals)))
 
 
 print(one())
-
-# doesn't work
-# print(two())
+print(two())
